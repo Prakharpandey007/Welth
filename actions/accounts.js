@@ -67,15 +67,32 @@ export async function bulkDeleteTransactions(transactionIds) {
       },
     });
 
+    if (transactions.length === 0) {
+      return { success: false, error: "No transactions found to delete" };
+    }
+
     // Group transactions by account to update balances
-    const accountBalanceChanges = transactions.reduce((acc, transaction) => {
-      const change =
-        transaction.type === "EXPENSE"
-          ? transaction.amount
-          : -transaction.amount;
-      acc[transaction.accountId] = (acc[transaction.accountId] || 0) + change;
-      return acc;
-    }, {});
+    const accountBalanceChanges = {};
+    
+    transactions.forEach((transaction) => {
+      const accountId = transaction.accountId;
+      
+      // Convert amount to number if it's a Decimal object
+      const amount = typeof transaction.amount === 'object' 
+        ? transaction.amount.toNumber() 
+        : Number(transaction.amount);
+      
+      // Calculate balance change (reverse the original transaction effect)
+      // If it was an EXPENSE, we add back to balance (positive change)
+      // If it was an INCOME, we subtract from balance (negative change)
+      const balanceChange = transaction.type === "EXPENSE" ? amount : -amount;
+      
+      // Initialize or accumulate the balance change for this account
+      if (!accountBalanceChanges[accountId]) {
+        accountBalanceChanges[accountId] = 0;
+      }
+      accountBalanceChanges[accountId] += balanceChange;
+    });
 
     // Delete transactions and update account balances in a transaction
     await db.$transaction(async (tx) => {
@@ -88,14 +105,19 @@ export async function bulkDeleteTransactions(transactionIds) {
       });
 
       // Update account balances
-      for (const [accountId, balanceChange] of Object.entries(
-        accountBalanceChanges
-      )) {
+      for (const [accountId, balanceChange] of Object.entries(accountBalanceChanges)) {
+        // Ensure balanceChange is a valid number
+        const incrementValue = Number(balanceChange);
+        
+        if (isNaN(incrementValue)) {
+          throw new Error(`Invalid balance change value: ${balanceChange}`);
+        }
+
         await tx.account.update({
           where: { id: accountId },
           data: {
             balance: {
-              increment: balanceChange,
+              increment: incrementValue,
             },
           },
         });
@@ -107,6 +129,7 @@ export async function bulkDeleteTransactions(transactionIds) {
 
     return { success: true };
   } catch (error) {
+    console.error("Error in bulkDeleteTransactions:", error);
     return { success: false, error: error.message };
   }
 }
