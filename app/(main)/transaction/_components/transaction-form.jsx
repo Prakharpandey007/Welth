@@ -24,13 +24,13 @@ import { cn } from "@/lib/utils";
 import { createTransaction, updateTransaction } from "@/actions/transaction";
 import { transactionSchema } from "@/app/lib/schema";
 import { ReceiptScanner } from "./recipt-scanner";
-// import { ReceiptScanner } from "./recipt-scanner";
 
 export function AddTransactionForm({
   accounts,
   categories,
   editMode = false,
   initialData = null,
+
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
