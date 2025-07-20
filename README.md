@@ -113,7 +113,7 @@ erDiagram
 |----------|---------------------------------------|---------------|
 | 1st of month @ 00:00 | Generate monthly Insights  | Configurable (e.g. Asia/Kolkata) |
 | Check Budget Alert | Trigger After Each 6 Hr | Configurable |
-| Recurring Transaction | Run Based on User-defind Recurring(e.g. Weekly/Monthly)| Configurable |
+| Recurring Transaction | Run Based on User-defind Recurring(e.g. Daily/Weekly/Monthly/Monthly/Yearly)| Configurable |
 
 ---
 
